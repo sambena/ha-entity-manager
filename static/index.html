@@ -37,6 +37,20 @@
     <h2 data-section="deleted"><span class="chevron">&#9662;</span><span class="section-title">Removed entities (via this tool)</span><button class="section-download" data-download="deleted">JSON</button></h2>
     <div id="deleted"></div>
   </section>
+
+  <section class="danger-zone">
+    <h2><span class="chevron">&#9662;</span><span class="section-title">&#128009; Danger zone: bulk remove</span></h2>
+    <div class="danger-body">
+      <p class="danger-intro">
+        Removes multiple entities at once, scoped to what this tool has already flagged
+        below (Duplicates + Disabled/inactive) — <strong>never</strong> "Healthy" entities.
+        Each option still snapshots every entity first, same as a single Remove, so
+        Restore is still available afterward. Pick the narrowest option that covers
+        what you actually want gone.
+      </p>
+      <div class="danger-options" id="danger-options"></div>
+    </div>
+  </section>
 </main>
 
 <div id="modal-overlay" class="modal-overlay" hidden>

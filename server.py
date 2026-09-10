@@ -83,6 +83,8 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_action(body, self._do_restore)
         elif parsed.path == "/api/actions/backup":
             self._handle_backup(body)
+        elif parsed.path == "/api/actions/bulk_remove":
+            self._handle_bulk_remove(body)
         else:
             self._send_json(404, {"error": "not found"})
 
@@ -123,6 +125,33 @@ class Handler(BaseHTTPRequestHandler):
             name = body.get("name") or f"ha-entity-manager {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             result = client.generate_backup(name)
             self._send_json(200, {"ok": True, "name": name, "result": result})
+        except Exception as error:
+            self._send_json(500, {"error": str(error)})
+        finally:
+            client.close()
+
+    def _handle_bulk_remove(self, body: dict) -> None:
+        entity_ids = body.get("entity_ids")
+        if not entity_ids or not isinstance(entity_ids, list):
+            self._send_json(400, {"error": "entity_ids (non-empty list) is required"})
+            return
+        if not body.get("confirm"):
+            self._send_json(400, {"error": "confirm: true is required to apply this action"})
+            return
+
+        client = HAClient(self.config)
+        results = []
+        try:
+            for entity_id in entity_ids:
+                try:
+                    outcome = self._do_remove(client, entity_id)
+                    results.append({"entity_id": entity_id, "ok": True, **outcome})
+                except Exception as error:
+                    # One failure shouldn't abort the rest of the batch -- report it
+                    # per-entity so the caller sees exactly what succeeded/failed.
+                    results.append({"entity_id": entity_id, "ok": False, "error": str(error)})
+            removed = sum(1 for r in results if r["ok"])
+            self._send_json(200, {"ok": True, "removed_count": removed, "failed_count": len(results) - removed, "results": results})
         except Exception as error:
             self._send_json(500, {"error": str(error)})
         finally:

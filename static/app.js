@@ -69,6 +69,81 @@ function showConfirmModal({ title, bodyNodes, confirmText = "Confirm", danger = 
   });
 }
 
+// Louder confirmation for bulk-remove: shows an affected-entity preview and requires
+// typing an exact phrase before the Confirm button even becomes clickable, on top of
+// the same Cancel/Confirm/Escape/overlay-click dismissal as the regular modal.
+function showDangerModal({ title, entityIds, requiredPhrase }) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("modal-overlay");
+    const modalEl = overlay.querySelector(".modal");
+    const titleEl = document.getElementById("modal-title");
+    const bodyEl = document.getElementById("modal-body");
+    const confirmBtn = document.getElementById("modal-confirm");
+    const cancelBtn = document.getElementById("modal-cancel");
+
+    modalEl.classList.add("modal-danger");
+    titleEl.innerHTML = "";
+    titleEl.append(el("span", { className: "danger-modal-title", textContent: `⚠️ ${title}` }));
+
+    bodyEl.innerHTML = "";
+    bodyEl.append(
+      el("p", { textContent: `This will permanently remove ${entityIds.length} ${entityIds.length === 1 ? "entity" : "entities"} from your live Home Assistant registry.` }),
+      el("div", { className: "danger-preview" }, entityIds.slice(0, 40).map((id) => el("div", { textContent: id })).concat(
+        entityIds.length > 40 ? [el("div", { className: "muted", textContent: `...and ${entityIds.length - 40} more` })] : [],
+      )),
+    );
+
+    const label = el("label", { className: "danger-confirm-label" }, [
+      document.createTextNode("Type "), el("code", { textContent: requiredPhrase }), document.createTextNode(" to confirm:"),
+    ]);
+    const input = el("input", { type: "text", className: "danger-confirm-input", autocomplete: "off", spellcheck: false });
+    bodyEl.append(label, input);
+
+    confirmBtn.textContent = `Remove ${entityIds.length} entities`;
+    confirmBtn.className = "danger";
+    confirmBtn.disabled = true;
+
+    function checkPhrase() {
+      const match = input.value.trim() === requiredPhrase;
+      confirmBtn.disabled = !match;
+      input.classList.toggle("mismatch", input.value.length > 0 && !match);
+    }
+
+    function cleanup(result) {
+      overlay.hidden = true;
+      modalEl.classList.remove("modal-danger");
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Confirm";
+      confirmBtn.removeEventListener("click", onConfirm);
+      cancelBtn.removeEventListener("click", onCancel);
+      overlay.removeEventListener("click", onOverlayClick);
+      document.removeEventListener("keydown", onKeydown);
+      input.removeEventListener("input", checkPhrase);
+      resolve(result);
+    }
+    function onConfirm() {
+      if (!confirmBtn.disabled) cleanup(true);
+    }
+    function onCancel() {
+      cleanup(false);
+    }
+    function onOverlayClick(event) {
+      if (event.target === overlay) cleanup(false);
+    }
+    function onKeydown(event) {
+      if (event.key === "Escape") cleanup(false);
+    }
+
+    input.addEventListener("input", checkPhrase);
+    confirmBtn.addEventListener("click", onConfirm);
+    cancelBtn.addEventListener("click", onCancel);
+    overlay.addEventListener("click", onOverlayClick);
+    document.addEventListener("keydown", onKeydown);
+    overlay.hidden = false;
+    input.focus();
+  });
+}
+
 // Builds a "why is this safe/unsafe" verdict from the same used_in/integration_status/
 // yaml_defined signals the tables already show, plus one extra caller-supplied signal
 // (current state for duplicates, or the flagged reason for inactive entities).
@@ -309,6 +384,89 @@ function sortableHeader(text, table, key, className) {
 
 let lastScan = { duplicates: [], inactive: [], good: [], drift: [] };
 
+// ---- Row selection + bulk remove (per table) -------------------------------------------------------
+// Selection persists across re-sorts (Set keyed by entity_id, survives table rebuilds) but is
+// cleared after a scan or a successful removal, since the entities it referred to may be gone.
+const selection = { duplicates: new Set(), inactive: new Set(), good: new Set() };
+
+function clearAllSelections() {
+  Object.values(selection).forEach((set) => set.clear());
+}
+
+// Wires a header "select all" checkbox + a list of per-row checkboxes to a table's
+// selection Set, keeping the header's checked/indeterminate state in sync.
+function wireSelectionColumn(tableKey, ids, headerCb, rowCbs, onChange) {
+  function updateHeaderState() {
+    const selectedCount = ids.filter((id) => selection[tableKey].has(id)).length;
+    headerCb.checked = selectedCount > 0 && selectedCount === ids.length;
+    headerCb.indeterminate = selectedCount > 0 && selectedCount < ids.length;
+  }
+  headerCb.addEventListener("change", () => {
+    if (headerCb.checked) ids.forEach((id) => selection[tableKey].add(id));
+    else ids.forEach((id) => selection[tableKey].delete(id));
+    headerCb.indeterminate = false;
+    rowCbs.forEach((cb) => { cb.checked = headerCb.checked; });
+    onChange();
+  });
+  rowCbs.forEach((cb, index) => {
+    cb.addEventListener("change", () => {
+      const id = ids[index];
+      if (cb.checked) selection[tableKey].add(id);
+      else selection[tableKey].delete(id);
+      updateHeaderState();
+      onChange();
+    });
+  });
+  updateHeaderState();
+}
+
+// A "Remove selected" bar shown above a table; sectionLabel is used in the danger
+// modal's title so it's clear which section's selection is being removed.
+function selectionToolbar(tableKey, sectionLabel) {
+  const countSpan = el("span", { className: "selection-count" });
+  const removeBtn = el("button", { className: "danger", textContent: "Remove selected" });
+
+  function refresh() {
+    const n = selection[tableKey].size;
+    countSpan.textContent = n ? `${n} selected` : "";
+    removeBtn.disabled = n === 0;
+  }
+  refresh();
+
+  removeBtn.addEventListener("click", async () => {
+    const ids = Array.from(selection[tableKey]);
+    if (!ids.length) return;
+    const confirmed = await showDangerModal({
+      title: `Remove ${ids.length} selected ${sectionLabel} ${ids.length === 1 ? "entity" : "entities"}?`,
+      entityIds: ids,
+      requiredPhrase: "REMOVE SELECTED",
+    });
+    if (!confirmed) return;
+    removeBtn.disabled = true;
+    removeBtn.textContent = "Removing...";
+    try {
+      const response = await fetch("/api/actions/bulk_remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity_ids: ids, confirm: true }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "bulk remove failed");
+      window.alert(`Removed ${payload.removed_count} entities${payload.failed_count ? `, ${payload.failed_count} failed (see console)` : ""}.`);
+      if (payload.failed_count) console.warn("bulk_remove failures:", payload.results.filter((r) => !r.ok));
+      selection[tableKey].clear();
+      await scan();
+      await loadDeleted();
+    } catch (error) {
+      window.alert(`Failed: ${error.message}`);
+      removeBtn.disabled = false;
+      removeBtn.textContent = "Remove selected";
+    }
+  });
+
+  return { bar: el("div", { className: "selection-bar" }, [removeBtn, countSpan]), refresh };
+}
+
 const duplicateSortKeys = {
   device_name: (g) => g.device_name.toLowerCase(),
   reason: (g) => g.reason.toLowerCase(),
@@ -323,8 +481,10 @@ function renderDuplicates(groups) {
     return;
   }
   const sorted = sortRows(groups, duplicateSortKeys, "duplicates");
+  const headerCb = el("input", { type: "checkbox" });
   const table = el("table", {}, [
     el("thead", {}, [el("tr", {}, [
+      el("th", { className: "nowrap" }, [headerCb]),
       sortableHeader("Device", "duplicates", "device_name"),
       sortableHeader("Why flagged", "duplicates", "reason"),
       el("th", { className: "nowrap", textContent: "Entity" }),
@@ -337,9 +497,15 @@ function renderDuplicates(groups) {
     ])]),
   ]);
   const tbody = el("tbody");
+  const ids = [];
+  const rowCbs = [];
   for (const group of sorted) {
     group.entities.forEach((entity, index) => {
       const row = el("tr");
+      const rowCb = el("input", { type: "checkbox", checked: selection.duplicates.has(entity.entity_id) });
+      ids.push(entity.entity_id);
+      rowCbs.push(rowCb);
+      row.append(el("td", { className: "nowrap" }, [rowCb]));
       if (index === 0) {
         row.append(
           el("td", { textContent: group.device_name, rowSpan: group.entities.length }),
@@ -366,7 +532,9 @@ function renderDuplicates(groups) {
     });
   }
   table.append(tbody);
-  container.append(tableWrap(table));
+  const toolbar = selectionToolbar("duplicates", "duplicate");
+  wireSelectionColumn("duplicates", ids, headerCb, rowCbs, toolbar.refresh);
+  container.append(toolbar.bar, tableWrap(table));
   makeResizable(table, "duplicates");
 }
 
@@ -386,8 +554,10 @@ function renderInactive(items) {
     return;
   }
   const sorted = sortRows(items, inactiveSortKeys, "inactive");
+  const headerCb = el("input", { type: "checkbox" });
   const table = el("table", {}, [
     el("thead", {}, [el("tr", {}, [
+      el("th", { className: "nowrap" }, [headerCb]),
       sortableHeader("Entity", "inactive", "entity_id", "nowrap"),
       sortableHeader("Name", "inactive", "friendly_name"),
       sortableHeader("Reason", "inactive", "reason"),
@@ -398,6 +568,8 @@ function renderInactive(items) {
     ])]),
   ]);
   const tbody = el("tbody");
+  const ids = [];
+  const rowCbs = [];
   for (const item of sorted) {
     const context = {
       entityId: item.entity_id,
@@ -406,7 +578,11 @@ function renderInactive(items) {
       yamlDefined: item.yaml_defined,
       extraSignal: { ok: true, text: `Flagged because: ${item.reason}` },
     };
+    const rowCb = el("input", { type: "checkbox", checked: selection.inactive.has(item.entity_id) });
+    ids.push(item.entity_id);
+    rowCbs.push(rowCb);
     tbody.append(el("tr", {}, [
+      el("td", { className: "nowrap" }, [rowCb]),
       el("td", { className: "nowrap" }, [el("code", { textContent: item.entity_id })]),
       el("td", { textContent: item.friendly_name }),
       el("td", { textContent: item.reason }),
@@ -417,7 +593,9 @@ function renderInactive(items) {
     ]));
   }
   table.append(tbody);
-  container.append(tableWrap(table));
+  const toolbar = selectionToolbar("inactive", "disabled/inactive");
+  wireSelectionColumn("inactive", ids, headerCb, rowCbs, toolbar.refresh);
+  container.append(toolbar.bar, tableWrap(table));
   makeResizable(table, "inactive");
 }
 
@@ -437,8 +615,10 @@ function renderGood(items) {
     return;
   }
   const sorted = sortRows(items, goodSortKeys, "good");
+  const headerCb = el("input", { type: "checkbox" });
   const table = el("table", {}, [
     el("thead", {}, [el("tr", {}, [
+      el("th", { className: "nowrap" }, [headerCb]),
       sortableHeader("Entity", "good", "entity_id", "nowrap"),
       sortableHeader("Name", "good", "friendly_name"),
       sortableHeader("State", "good", "state", "nowrap"),
@@ -449,6 +629,8 @@ function renderGood(items) {
     ])]),
   ]);
   const tbody = el("tbody");
+  const ids = [];
+  const rowCbs = [];
   for (const item of sorted) {
     const context = {
       entityId: item.entity_id,
@@ -457,7 +639,11 @@ function renderGood(items) {
       yamlDefined: item.yaml_defined,
       extraSignal: stateSignal(item),
     };
+    const rowCb = el("input", { type: "checkbox", checked: selection.good.has(item.entity_id) });
+    ids.push(item.entity_id);
+    rowCbs.push(rowCb);
     tbody.append(el("tr", {}, [
+      el("td", { className: "nowrap" }, [rowCb]),
       el("td", { className: "nowrap" }, [el("code", { textContent: item.entity_id })]),
       el("td", { textContent: item.friendly_name }),
       el("td", { className: "nowrap", textContent: item.state || "-" }),
@@ -468,7 +654,9 @@ function renderGood(items) {
     ]));
   }
   table.append(tbody);
-  container.append(tableWrap(table));
+  const toolbar = selectionToolbar("good", "healthy");
+  wireSelectionColumn("good", ids, headerCb, rowCbs, toolbar.refresh);
+  container.append(toolbar.bar, tableWrap(table));
   makeResizable(table, "good");
 }
 
@@ -577,6 +765,109 @@ async function loadDeleted() {
   }
 }
 
+// ---- Danger zone: bulk remove -------------------------------------------------------
+// Scoped ONLY to entities already flagged as Duplicates or Disabled/inactive above --
+// never "Healthy" entities and never the whole registry, no matter which tier is picked.
+
+function inactiveContext(item) {
+  return {
+    entityId: item.entity_id,
+    usedIn: item.used_in,
+    integrationStatus: item.integration_status,
+    yamlDefined: item.yaml_defined,
+    extraSignal: { ok: true, text: `Flagged because: ${item.reason}` },
+  };
+}
+
+function isSafeToRemove(context) {
+  return assessSafety(context).verdictClass === "verdict-ok";
+}
+
+function dangerTiers() {
+  const inactiveIds = (lastScan.inactive || []).map((i) => i.entity_id);
+  const orphanedIds = (lastScan.inactive || [])
+    .filter((item) => isSafeToRemove(inactiveContext(item)))
+    .map((item) => item.entity_id);
+  const duplicateIds = (lastScan.duplicates || []).flatMap((group) => group.entities.map((e) => e.entity_id));
+  const allFlaggedIds = [...new Set([...inactiveIds, ...duplicateIds])];
+  return { orphaned: orphanedIds, allInactive: inactiveIds, allFlagged: allFlaggedIds };
+}
+
+async function runBulkRemove(entityIds, phrase, title, button) {
+  if (!entityIds.length) return;
+  const confirmed = await showDangerModal({ title, entityIds, requiredPhrase: phrase });
+  if (!confirmed) return;
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "Removing...";
+  try {
+    const response = await fetch("/api/actions/bulk_remove", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entity_ids: entityIds, confirm: true }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "bulk remove failed");
+    window.alert(`Removed ${payload.removed_count} entities${payload.failed_count ? `, ${payload.failed_count} failed (see console)` : ""}.`);
+    if (payload.failed_count) console.warn("bulk_remove failures:", payload.results.filter((r) => !r.ok));
+    await scan();
+    await loadDeleted();
+  } catch (error) {
+    window.alert(`Failed: ${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
+function dangerOptionRow(tierClass, label, description, buttonText, entityIds, phrase, title) {
+  const button = el("button", { textContent: `${buttonText} (${entityIds.length})`, disabled: entityIds.length === 0 });
+  button.addEventListener("click", () => runBulkRemove(entityIds, phrase, title, button));
+  return el("div", { className: `danger-option ${tierClass}` }, [
+    el("div", { className: "danger-option-text" }, [
+      el("strong", { textContent: label }),
+      el("span", { textContent: description }),
+    ]),
+    button,
+  ]);
+}
+
+function renderDangerOptions() {
+  const container = document.getElementById("danger-options");
+  if (!container) return;
+  container.innerHTML = "";
+  const tiers = dangerTiers();
+  container.append(
+    dangerOptionRow(
+      "danger-tier-1",
+      "Tier 1 — Orphaned only (safest)",
+      "Inactive entities with a green safety verdict: not referenced in YAML, integration not active.",
+      "Remove orphaned",
+      tiers.orphaned,
+      "REMOVE ORPHANED",
+      "Remove all orphaned entities?",
+    ),
+    dangerOptionRow(
+      "danger-tier-2",
+      "Tier 2 — All disabled/inactive",
+      "Everything in the Disabled/inactive section above, including entities with mixed safety signals.",
+      "Remove all inactive",
+      tiers.allInactive,
+      "REMOVE ALL INACTIVE",
+      "Remove every disabled/inactive entity?",
+    ),
+    dangerOptionRow(
+      "danger-tier-3",
+      "Tier 3 — Everything flagged (most dangerous)",
+      "All disabled/inactive entities PLUS every entity in a duplicate group. Does not touch Healthy entities.",
+      "Remove everything flagged",
+      tiers.allFlagged,
+      "REMOVE EVERYTHING FLAGGED",
+      "Remove EVERY flagged entity — duplicates and inactive?",
+    ),
+  );
+}
+
 async function scan() {
   statusEl.textContent = "scanning...";
   try {
@@ -584,10 +875,12 @@ async function scan() {
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "scan failed");
     lastScan = payload;
+    clearAllSelections();
     renderDuplicates(payload.duplicates);
     renderInactive(payload.inactive);
     renderGood(payload.good);
     renderDrift(payload.drift);
+    renderDangerOptions();
     statusEl.textContent = `last scan: ${new Date().toLocaleTimeString()}`;
   } catch (error) {
     statusEl.textContent = `scan failed: ${error.message}`;
