@@ -1,5 +1,7 @@
 # ha-entity-manager
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Local dashboard for reviewing Home Assistant entity duplicates, disabled/inactive
 entities, and YAML drift against the live entity registry. Runs entirely on your
 machine; nothing is written to Home Assistant except when you click Disable/Remove
