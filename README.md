@@ -7,6 +7,8 @@ entities, and YAML drift against the live entity registry. Runs entirely on your
 machine; nothing is written to Home Assistant except when you click Disable/Remove
 and confirm.
 
+![Dashboard screenshot with sample data](docs/screenshot.svg)
+
 ## Prerequisites
 
 - **Python 3.10+**. Check with `python --version`; if it's missing on Windows,

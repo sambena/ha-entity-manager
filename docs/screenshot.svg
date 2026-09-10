@@ -1,0 +1,141 @@
+<svg viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .muted { fill: #9a9a9a; }
+      .fg { fill: #eaeaea; }
+      .accent { fill: #7aa2ff; }
+      .ok { fill: #2f9e44; }
+      .warn { fill: #ff6b6b; }
+      .th { fill: #9a9a9a; font-weight: 600; font-size: 13px; }
+      .td { fill: #eaeaea; font-size: 13px; }
+      .badge-text { font-size: 11px; }
+      text { dominant-baseline: middle; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="760" fill="#16171a"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="1200" height="56" fill="#16171a"/>
+  <line x1="0" y1="56" x2="1200" y2="56" stroke="#33343a"/>
+  <text x="20" y="30" class="fg" font-size="18" font-weight="700">Home Assistant Entity Manager</text>
+  <text x="700" y="30" class="muted" font-size="12">last scan: 10:14:32 AM</text>
+  <rect x="840" y="16" width="150" height="26" rx="4" fill="#1f2024" stroke="#33343a"/>
+  <text x="915" y="30" class="fg" font-size="12" text-anchor="middle">Download all (JSON)</text>
+  <rect x="1000" y="16" width="90" height="26" rx="4" fill="#1f2024" stroke="#33343a"/>
+  <text x="1045" y="30" class="fg" font-size="12" text-anchor="middle">Back up HA</text>
+  <rect x="1100" y="16" width="80" height="26" rx="4" fill="#1f2024" stroke="#7aa2ff"/>
+  <text x="1140" y="30" class="accent" font-size="12" text-anchor="middle">Re-scan</text>
+
+  <!-- Section: Duplicates -->
+  <rect x="16" y="76" width="1168" height="150" rx="8" fill="#1f2024" stroke="#33343a"/>
+  <text x="36" y="100" class="fg" font-size="14" font-weight="700">&#9662; Duplicate entities (same device + capability)</text>
+  <line x1="16" y1="114" x2="1184" y2="114" stroke="#33343a"/>
+  <text x="36" y="134" class="th">Device</text>
+  <text x="180" y="134" class="th">Why flagged</text>
+  <text x="480" y="134" class="th">Entity</text>
+  <text x="760" y="134" class="th">State</text>
+  <text x="860" y="134" class="th">Used in YAML</text>
+  <text x="1040" y="134" class="th">Actions</text>
+
+  <text x="36" y="172" class="td">Garage Camera</text>
+  <text x="180" y="164" class="td" font-size="12">2x binary_sensor entities</text>
+  <text x="180" y="180" class="td" font-size="12">named 'motion' on this device</text>
+  <text x="480" y="164" class="td mono">binary_sensor.garage_camera_motion</text>
+  <text x="480" y="192" class="td mono">binary_sensor.garage_camera_motion_2</text>
+  <text x="760" y="164" class="td">off</text>
+  <text x="760" y="192" class="warn">unavailable</text>
+  <rect x="860" y="154" width="150" height="18" rx="3" fill="none" stroke="#ff6b6b"/>
+  <text x="935" y="163" class="warn badge-text" text-anchor="middle">security_dashboard.yaml</text>
+  <rect x="860" y="182" width="150" height="18" rx="3" fill="none" stroke="#ff6b6b"/>
+  <text x="935" y="191" class="warn badge-text" text-anchor="middle">not referenced in YAML</text>
+  <rect x="1040" y="156" width="60" height="20" rx="4" fill="#1f2024" stroke="#33343a"/>
+  <text x="1070" y="166" class="fg badge-text" text-anchor="middle">Disable</text>
+  <rect x="1106" y="156" width="60" height="20" rx="4" fill="#1f2024" stroke="#ff6b6b"/>
+  <text x="1136" y="166" class="warn badge-text" text-anchor="middle">Remove</text>
+  <rect x="1040" y="184" width="60" height="20" rx="4" fill="#1f2024" stroke="#33343a"/>
+  <text x="1070" y="194" class="fg badge-text" text-anchor="middle">Disable</text>
+  <rect x="1106" y="184" width="60" height="20" rx="4" fill="#1f2024" stroke="#ff6b6b"/>
+  <text x="1136" y="194" class="warn badge-text" text-anchor="middle">Remove</text>
+
+  <!-- Section: Disabled/inactive -->
+  <rect x="16" y="242" width="1168" height="230" rx="8" fill="#1f2024" stroke="#33343a"/>
+  <text x="36" y="266" class="fg" font-size="14" font-weight="700">&#9662; Disabled / inactive entities</text>
+  <line x1="16" y1="280" x2="1184" y2="280" stroke="#33343a"/>
+  <text x="36" y="300" class="th">Entity</text>
+  <text x="330" y="300" class="th">Reason</text>
+  <text x="520" y="300" class="th">Integration</text>
+  <text x="630" y="300" class="th">YAML def.</text>
+  <text x="740" y="300" class="th">Used in YAML</text>
+  <text x="1040" y="300" class="th">Actions</text>
+
+  <!-- row 1 -->
+  <text x="36" y="330" class="td mono">automation.old_porch_light_schedule</text>
+  <text x="330" y="330" class="td">state is unavailable</text>
+  <rect x="520" y="320" width="90" height="18" rx="3" fill="none" stroke="#9a9a9a"/>
+  <text x="565" y="329" class="muted badge-text" text-anchor="middle">n/a</text>
+  <rect x="630" y="320" width="130" height="18" rx="3" fill="none" stroke="#2f9e44"/>
+  <text x="695" y="329" class="ok badge-text" text-anchor="middle">orphaned — not in YAML</text>
+  <rect x="855" y="320" width="150" height="18" rx="3" fill="none" stroke="#ff6b6b"/>
+  <text x="930" y="329" class="warn badge-text" text-anchor="middle">not referenced in YAML</text>
+  <rect x="1040" y="316" width="60" height="20" rx="4" fill="#1f2024" stroke="#33343a"/>
+  <text x="1070" y="326" class="fg badge-text" text-anchor="middle">Disable</text>
+  <rect x="1106" y="316" width="60" height="20" rx="4" fill="#1f2024" stroke="#ff6b6b"/>
+  <text x="1136" y="326" class="warn badge-text" text-anchor="middle">Remove</text>
+
+  <!-- row 2 -->
+  <text x="36" y="368" class="td mono">sensor.weather_station_last_known_temp</text>
+  <text x="330" y="360" class="td" font-size="12">unchanged for 62 days</text>
+  <text x="330" y="376" class="td" font-size="12">(threshold 30)</text>
+  <rect x="520" y="358" width="60" height="18" rx="3" fill="none" stroke="#2f9e44"/>
+  <text x="550" y="367" class="ok badge-text" text-anchor="middle">active</text>
+  <rect x="630" y="358" width="110" height="18" rx="3" fill="none" stroke="#ff6b6b"/>
+  <text x="685" y="367" class="warn badge-text" text-anchor="middle">still defined</text>
+  <text x="855" y="367" class="muted" font-size="12">main_dashboard.yaml</text>
+  <rect x="1040" y="354" width="60" height="20" rx="4" fill="#1f2024" stroke="#33343a"/>
+  <text x="1070" y="364" class="fg badge-text" text-anchor="middle">Disable</text>
+  <rect x="1106" y="354" width="60" height="20" rx="4" fill="#1f2024" stroke="#ff6b6b"/>
+  <text x="1136" y="364" class="warn badge-text" text-anchor="middle">Remove</text>
+
+  <!-- row 3 -->
+  <text x="36" y="410" class="td mono">switch.unused_smart_plug</text>
+  <text x="330" y="410" class="td">disabled by integration</text>
+  <rect x="520" y="400" width="60" height="18" rx="3" fill="none" stroke="#2f9e44"/>
+  <text x="550" y="409" class="ok badge-text" text-anchor="middle">active</text>
+  <rect x="630" y="400" width="90" height="18" rx="3" fill="none" stroke="#9a9a9a"/>
+  <text x="675" y="409" class="muted badge-text" text-anchor="middle">n/a</text>
+  <rect x="855" y="400" width="150" height="18" rx="3" fill="none" stroke="#ff6b6b"/>
+  <text x="930" y="409" class="warn badge-text" text-anchor="middle">not referenced in YAML</text>
+  <rect x="1040" y="396" width="60" height="20" rx="4" fill="#1f2024" stroke="#33343a"/>
+  <text x="1070" y="406" class="fg badge-text" text-anchor="middle">Disable</text>
+  <rect x="1106" y="396" width="60" height="20" rx="4" fill="#1f2024" stroke="#ff6b6b"/>
+  <text x="1136" y="406" class="warn badge-text" text-anchor="middle">Remove</text>
+
+  <line x1="16" y1="436" x2="1184" y2="436" stroke="#33343a"/>
+  <text x="36" y="456" class="muted" font-size="12">scroll for more...</text>
+
+  <!-- Section: Healthy -->
+  <rect x="16" y="488" width="1168" height="130" rx="8" fill="#1f2024" stroke="#33343a"/>
+  <text x="36" y="512" class="fg" font-size="14" font-weight="700">&#9662; Healthy entities</text>
+  <line x1="16" y1="526" x2="1184" y2="526" stroke="#33343a"/>
+  <text x="36" y="546" class="th">Entity</text>
+  <text x="330" y="546" class="th">State</text>
+  <text x="520" y="546" class="th">Integration</text>
+
+  <text x="36" y="576" class="td mono">light.living_room</text>
+  <text x="330" y="576" class="td">on</text>
+  <rect x="520" y="566" width="60" height="18" rx="3" fill="none" stroke="#2f9e44"/>
+  <text x="550" y="575" class="ok badge-text" text-anchor="middle">active</text>
+
+  <text x="36" y="604" class="td mono">climate.thermostat</text>
+  <text x="330" y="604" class="td">heat</text>
+  <rect x="520" y="594" width="60" height="18" rx="3" fill="none" stroke="#2f9e44"/>
+  <text x="550" y="603" class="ok badge-text" text-anchor="middle">active</text>
+
+  <!-- Section: Removed entities (collapsed hint) -->
+  <rect x="16" y="634" width="1168" height="44" rx="8" fill="#1f2024" stroke="#33343a"/>
+  <text x="36" y="658" class="fg" font-size="14" font-weight="700">&#9662; Removed entities (via this tool)</text>
+
+  <text x="16" y="716" class="muted" font-size="12">Sample data shown for illustration — not real Home Assistant entities.</text>
+</svg>
