@@ -1,5 +1,6 @@
 # ha-entity-manager
 
+[![CI](https://github.com/sambena/ha-entity-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/sambena/ha-entity-manager/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Local dashboard for reviewing Home Assistant entity duplicates, disabled/inactive
