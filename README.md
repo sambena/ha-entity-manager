@@ -33,15 +33,20 @@ and confirm.
    copy config.example.json config.json
    ```
 3. Generate a long-lived access token in Home Assistant (Profile -> Security ->
-   Long-Lived Access Tokens) and set it as an environment variable:
-   ```powershell
-   $env:HOME_ASSISTANT_TOKEN = "your-token-here"
-   ```
-4. Run the server:
-   ```bash
-   python server.py
-   ```
-5. Open http://localhost:8765 (or whatever `server_port` you set).
+   Long-Lived Access Tokens).
+4. Start it — either:
+   - **Double-click `start.bat`** (or run `.\start.ps1` in PowerShell). It installs
+     PyYAML if missing, asks for your token the first time (optionally saving it
+     to a local, gitignored `.token` file so you're not asked again), and opens
+     the dashboard in your browser automatically.
+   - **Or manually:**
+     ```powershell
+     $env:HOME_ASSISTANT_TOKEN = "your-token-here"
+     python server.py
+     ```
+     then open http://localhost:8765 (or whatever `server_port` you set) yourself.
+5. To stop it: **Ctrl+C** in the terminal window it's running in (or just close
+   the window) — it's a plain foreground process, nothing runs in the background.
 
 ## Configuration (`config.json`)
 

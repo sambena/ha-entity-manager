@@ -6,3 +6,6 @@ config.json
 
 # Runtime data: snapshots of removed entities, local to this machine
 data/
+
+# Access token saved locally by start.ps1, if you opt in
+.token
