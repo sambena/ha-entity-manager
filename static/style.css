@@ -1,0 +1,226 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7f8;
+  --fg: #1a1a1a;
+  --card: #ffffff;
+  --border: #e0e0e0;
+  --accent: #3b6ef0;
+  --danger: #d43f3f;
+  --muted: #6b6b6b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171a;
+    --fg: #eaeaea;
+    --card: #1f2024;
+    --border: #33343a;
+    --accent: #7aa2ff;
+    --danger: #ff6b6b;
+    --muted: #9a9a9a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1 { font-size: 1.1rem; margin: 0; }
+
+#status { color: var(--muted); font-size: 0.85rem; }
+
+main { padding: 1.5rem; max-width: 1500px; margin: 0 auto; }
+
+section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+section h2 {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+section h2 .chevron {
+  display: inline-block;
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+}
+
+section h2 .section-title { flex: 1; }
+
+section h2 .section-download {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+section.collapsed h2 { border-bottom: none; }
+section.collapsed h2 .chevron { transform: rotate(-90deg); }
+section.collapsed > *:not(h2) { display: none; }
+
+/* Cells wrap by default so a table rarely needs horizontal scroll to be read.
+   table-wrap also bounds each table's height with its own scrollbar (both axes)
+   so a 100+ row table's scrollbar sits near the top of the section, not
+   unreachably far below the last row -- and the sticky header stays visible
+   while scrolling within it. */
+.table-wrap { overflow: auto; max-width: 100%; max-height: 60vh; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+th, td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+th.nowrap, td.nowrap {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* Only wrap-capable columns need a floor -- without one, a table with many
+   columns in a narrow window shrinks every column until text wraps letter by
+   letter. Below this width the table should scroll horizontally (table-wrap's
+   overflow-x) instead of squeezing columns into confetti. .nowrap columns (short
+   badges, entity ids, Actions buttons) are excluded so they stay content-sized
+   instead of being padded out to the same floor. */
+th:not(.nowrap), td:not(.nowrap) { min-width: 90px; }
+
+/* position:sticky also serves as the containing block for the absolutely
+   positioned .col-resizer handle -- no separate position:relative needed. */
+th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--card); }
+
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.col-resizer:hover, .col-resizer.active { background: var(--accent); opacity: 0.4; }
+
+tr:last-child td { border-bottom: none; }
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+button {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+button.primary { border-color: var(--accent); color: var(--accent); }
+button.danger { border-color: var(--danger); color: var(--danger); }
+button:hover { filter: brightness(0.95); }
+
+.empty { color: var(--muted); padding: 1rem; font-size: 0.85rem; }
+
+code { font-size: 0.8rem; }
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.badge-ok { color: #2f9e44; border-color: #2f9e44; }
+.badge-warn { color: var(--danger); border-color: var(--danger); }
+.badge-muted { color: var(--muted); }
+
+.used-in-list { font-size: 0.75rem; color: var(--muted); }
+.used-in-list div { margin-bottom: 0.15rem; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+/* An author stylesheet's display:flex above beats the browser's default
+   [hidden]{display:none} UA rule even at equal specificity, so the hidden
+   attribute alone doesn't hide it -- this rule needs to win explicitly. */
+.modal-overlay[hidden] { display: none; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  max-width: 560px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+.modal code { display: block; margin-bottom: 0.75rem; word-break: break-all; }
+
+.verdict {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.verdict-ok { background: rgba(47, 158, 68, 0.15); color: #2f9e44; }
+.verdict-warn { background: rgba(212, 63, 63, 0.15); color: var(--danger); }
+.verdict-muted { background: rgba(107, 107, 107, 0.15); color: var(--muted); }
+
+.reason-list { list-style: none; margin: 0 0 1rem; padding: 0; font-size: 0.85rem; }
+.reason-list li { padding: 0.3rem 0 0.3rem 1.4rem; position: relative; }
+.reason-list li.reason-ok::before { content: "✓"; position: absolute; left: 0; color: #2f9e44; }
+.reason-list li.reason-warn::before { content: "!"; position: absolute; left: 0.2rem; color: var(--danger); font-weight: 700; }
+.reason-list .reason-files { color: var(--muted); font-size: 0.8rem; margin: 0.15rem 0 0 1.4rem; }
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HA Entity Manager</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Home Assistant Entity Manager</h1>
+  <div>
+    <span id="status">not scanned yet</span>
+    <button id="download-all">Download all (JSON)</button>
+    <button id="backup">Back up HA</button>
+    <button class="primary" id="rescan">Re-scan</button>
+  </div>
+</header>
+<main>
+  <section>
+    <h2 data-section="duplicates"><span class="chevron">&#9662;</span><span class="section-title">Duplicate entities (same device + capability)</span><button class="section-download" data-download="duplicates">JSON</button></h2>
+    <div id="duplicates"></div>
+  </section>
+  <section>
+    <h2 data-section="inactive"><span class="chevron">&#9662;</span><span class="section-title">Disabled / inactive entities</span><button class="section-download" data-download="inactive">JSON</button></h2>
+    <div id="inactive"></div>
+  </section>
+  <section>
+    <h2 data-section="good"><span class="chevron">&#9662;</span><span class="section-title">Healthy entities</span><button class="section-download" data-download="good">JSON</button></h2>
+    <div id="good"></div>
+  </section>
+  <section>
+    <h2 data-section="drift"><span class="chevron">&#9662;</span><span class="section-title">YAML drift</span><button class="section-download" data-download="drift">JSON</button></h2>
+    <div id="drift"></div>
+  </section>
+  <section>
+    <h2 data-section="deleted"><span class="chevron">&#9662;</span><span class="section-title">Removed entities (via this tool)</span><button class="section-download" data-download="deleted">JSON</button></h2>
+    <div id="deleted"></div>
+  </section>
+</main>
+
+<div id="modal-overlay" class="modal-overlay" hidden>
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button id="modal-cancel">Cancel</button>
+      <button id="modal-confirm" class="danger">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

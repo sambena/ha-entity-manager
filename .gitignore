@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+
+# Local config override (real host/paths) -- config.example.json is the tracked template
+config.json
+
+# Runtime data: snapshots of removed entities, local to this machine
+data/

@@ -1,0 +1,8 @@
+{
+  "ha_host": "192.168.1.100",
+  "ha_port": 80,
+  "ha_use_ssl": false,
+  "yaml_root": "\\\\192.168.1.100\\config",
+  "inactive_days": 30,
+  "server_port": 8765
+}
